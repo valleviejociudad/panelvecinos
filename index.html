@@ -158,29 +158,22 @@
 
     // Función para convertir fecha serial de Excel a string legible
 function excelSerialToDate(serial) {
-    if (!serial || serial === '') return '';
-    
-    // Excel/Windows cree que 1900 fue bisiesto (error histórico), 
-    // por eso hay que sumar 25569 días para convertir a fecha Unix
-    const excelOffset = 25569;
-    const secondsInDay = 86400;
-    
-    // Convertir el número serial de Excel a timestamp Unix (en segundos)
-    const unixTimestamp = (serial - excelOffset) * secondsInDay;
-    
-    // Crear la fecha en UTC y luego ajustarla a zona horaria de Argentina
-    const date = new Date(unixTimestamp * 1000);
-    
-    // Formatear bonito en español Argentina con hora
-    return date.toLocaleString('es-AR', {
+    if (!serial) return '';
+    const date = new Date((serial - 25569) * 86400 * 1000);
+    const options = {
         timeZone: 'America/Argentina/Catamarca',
-        year: 'numeric',
-        month: '2-digit',
         day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
         hour12: true
-    }).replace(/\//g, '/').toUpperCase(); // opcional: 26/06/2025, 07:43 p. m.
+    };
+    return date.toLocaleString('es-AR', options)
+               .replace(',', ' ')           // quita la coma
+               .toUpperCase()               // P. M. en vez de p. m.
+               .replace('P. M.', 'p. m.')   // opcional: minúsculas
+               .replace('A. M.', 'a. m.');
 }
 
     // Cargar datos desde Google Sheet
