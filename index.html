@@ -152,6 +152,7 @@
     </table>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script>
     let reclamos = [];
     let datosFiltrados = [];
@@ -199,29 +200,20 @@ function formatearFecha(valor) {
             const response = await fetch(csvUrl);
             if (!response.ok) throw new Error('Error al acceder al Sheet. Verifica que sea público.');
             const csvText = await response.text();
-            const lines = csvText.split('\n').filter(line => line.trim());
-            const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+const parsed = Papa.parse(csvText, {
+    header: true,
+    skipEmptyLines: true
+});
 
-            reclamos = lines.slice(1).map(line => {
-                const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
-                let obj = {};
-                headers.forEach((header, i) => {
-                    obj[header] = values[i] || '';
-                });
-                // Convertir fecha
-                if (obj['Fecha']) {
-                    obj['fecha'] = formatearFecha(obj['Fecha']);
-                }
-                return {
-                    fecha: obj['fecha'] || '',
-                    nombre: obj['Nombre'] || '',
-                    tel: obj['Teléfono'] || '',
-                    dir: obj['Dirección'] || '',
-                    tipo: obj['Tipo'] || '',
-                    desc: obj['Descripción'] || ''
-                };
-            }).filter(r => r.nombre); // Filtrar filas vacías
-
+reclamos = parsed.data.map(obj => ({
+    fecha: formatearFecha(obj['Fecha'] || ''),
+    nombre: obj['Nombre'] || '',
+    tel: obj['Teléfono'] || '',
+    dir: obj['Dirección'] || '',
+    tipo: obj['Tipo'] || '',
+    desc: obj['Descripción'] || ''
+}));
+            
             datosFiltrados = [...reclamos];
             render();
             loading.style.display = 'none';
