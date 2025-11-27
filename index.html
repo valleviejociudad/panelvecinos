@@ -157,16 +157,31 @@
     let datosFiltrados = [];
 
     // Función para convertir fecha serial de Excel a string legible
-    function excelSerialToDate(serial) {
-        if (!serial) return '';
-        const utc_days = Math.floor(serial - 25569);
-        const utc_value = utc_days * 86400;
-        const date_info = new Date(utc_value * 1000);
-        const fractional_day = serial - Math.floor(serial) + 0.0000001;
-        let total_seconds = Math.floor(date_info.getTime() + (fractional_day * 86400 * 1000));
-        const row_date = new Date(total_seconds);
-        return row_date.toLocaleString('es-AR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(',', '');
-    }
+function excelSerialToDate(serial) {
+    if (!serial || serial === '') return '';
+    
+    // Excel/Windows cree que 1900 fue bisiesto (error histórico), 
+    // por eso hay que sumar 25569 días para convertir a fecha Unix
+    const excelOffset = 25569;
+    const secondsInDay = 86400;
+    
+    // Convertir el número serial de Excel a timestamp Unix (en segundos)
+    const unixTimestamp = (serial - excelOffset) * secondsInDay;
+    
+    // Crear la fecha en UTC y luego ajustarla a zona horaria de Argentina
+    const date = new Date(unixTimestamp * 1000);
+    
+    // Formatear bonito en español Argentina con hora
+    return date.toLocaleString('es-AR', {
+        timeZone: 'America/Argentina/Catamarca',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    }).replace(/\//g, '/').toUpperCase(); // opcional: 26/06/2025, 07:43 p. m.
+}
 
     // Cargar datos desde Google Sheet
     async function cargarDatos() {
