@@ -156,24 +156,33 @@
     let reclamos = [];
     let datosFiltrados = [];
 
-    // Función para convertir fecha serial de Excel a string legible
-function excelSerialToDate(serial) {
-    if (!serial) return '';
-    const date = new Date((serial - 25569) * 86400 * 1000);
-    const options = {
-        timeZone: 'America/Argentina/Catamarca',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-    };
-    return date.toLocaleString('es-AR', options)
-               .replace(',', ' ')           // quita la coma
-               .toUpperCase()               // P. M. en vez de p. m.
-               .replace('P. M.', 'p. m.')   // opcional: minúsculas
-               .replace('A. M.', 'a. m.');
+function formatearFecha(valor) {
+    if (!valor) return '';
+
+    // Si ya es una fecha con formato argentino (lo más común ahora)
+    if (typeof valor === 'string' && valor.includes('/1900') || valor.includes('/2025') || valor.includes('p. m.') || valor.includes('a. m.')) {
+        // Ya está bien formateada, solo la limpiamos un poquito
+        return valor.trim()
+                    .replace(' p. m.', ' p.m.')
+                    .replace(' a. m.', ' a.m.');
+    }
+
+    // Si por alguna razón sigue viniendo como número serial de Excel
+    const num = parseFloat(valor);
+    if (!isNaN(num) && num > 40000) {
+        const date = new Date((num - 25569) * 86400000); // versión más simple y exacta
+        return date.toLocaleString('es-AR', {
+            timeZone: 'America/Argentina/Catamarca',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        }).replace(',', '');
+    }
+
+    return valor; // por si acaso
 }
 
     // Cargar datos desde Google Sheet
@@ -201,7 +210,7 @@ function excelSerialToDate(serial) {
                 });
                 // Convertir fecha
                 if (obj['Fecha']) {
-                    obj['fecha'] = excelSerialToDate(parseFloat(obj['Fecha']));
+                    obj['fecha'] = formatearFecha(obj['Fecha']);
                 }
                 return {
                     fecha: obj['fecha'] || '',
